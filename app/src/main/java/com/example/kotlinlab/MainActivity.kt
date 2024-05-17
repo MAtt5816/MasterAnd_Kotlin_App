@@ -20,7 +20,8 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     //ProfileScreen()
-                    GameScreen()
+                    ProfileCard()
+                    //GameScreen()
                 }
             }
         }
