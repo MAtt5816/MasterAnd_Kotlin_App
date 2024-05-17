@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,14 +41,16 @@ import com.example.kotlinlab.ui.theme.KotlinLabTheme
 
 
 @Composable
-private fun OutlinedTextFieldWithError(propVal: MutableState<String>,
-                                       label: String, errorMessage: String,
-                                       keyboardType: KeyboardType,
-                                       validation: (input: MutableState<String>) -> Boolean) {
+private fun outlinedTextFieldWithError(
+    propVal: MutableState<String>,
+    label: String, errorMessage: String,
+    keyboardType: KeyboardType,
+    validation: (input: MutableState<String>) -> Boolean
+): Boolean {
     val isError = validation.invoke(propVal)
-    val supportingText = if(isError) errorMessage else ""
+    val supportingText = if (isError) errorMessage else ""
 
-    Box{
+    Box {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
             value = propVal.value,
@@ -70,13 +73,17 @@ private fun OutlinedTextFieldWithError(propVal: MutableState<String>,
             supportingText = { Text(supportingText) }
         )
     }
+
+    return isError
 }
 
 @Composable
-private fun ProfileImageWithPicker(profileImageUri: Uri?,
-                                   selectImageOnClick: () -> Unit) {
+private fun ProfileImageWithPicker(
+    profileImageUri: Uri?,
+    selectImageOnClick: () -> Unit
+) {
     Box {
-        if (profileImageUri != null){
+        if (profileImageUri != null) {
             AsyncImage(
                 model = profileImageUri,
                 contentDescription = "Profile image",
@@ -86,13 +93,13 @@ private fun ProfileImageWithPicker(profileImageUri: Uri?,
                     .align(Alignment.Center),
                 contentScale = ContentScale.Crop,
             )
-        }
-        else{
+        } else {
             Image(
                 //wymaga dodania ikony w katalogu /res/drawable
                 //(prawy przycisk | New | Vector asset)
                 painter = painterResource(
-                    id = R.drawable.ic_baseline_question_mark_24),
+                    id = R.drawable.ic_baseline_question_mark_24
+                ),
                 contentDescription = "Profile photo",
                 modifier = Modifier
                     .size(100.dp)
@@ -109,7 +116,8 @@ private fun ProfileImageWithPicker(profileImageUri: Uri?,
         ) {
             Image(
                 painter = painterResource(
-                    id = R.drawable.ic_baseline_image_search_24),
+                    id = R.drawable.ic_baseline_image_search_24
+                ),
                 contentDescription = "Search a photo",
                 contentScale = ContentScale.Crop
             )
@@ -118,10 +126,20 @@ private fun ProfileImageWithPicker(profileImageUri: Uri?,
 }
 
 @Composable
-fun ProfileScreen() {
+fun LoginScreen(onStartGameClicked: (Int) -> Unit, clearForm: Boolean) {
     val name = rememberSaveable { mutableStateOf("") }
     val email = rememberSaveable { mutableStateOf("") }
     val numberOfColors = rememberSaveable { mutableStateOf("") }
+
+    if (clearForm) {
+        name.value = ""
+        email.value = ""
+        numberOfColors.value = ""
+    }
+
+    var nameErr = remember { mutableStateOf(false) }
+    val emailErr = remember { mutableStateOf(false) }
+    val numberOfColorsErr = remember { mutableStateOf(false) }
 
     val profileImageUri = rememberSaveable { mutableStateOf<Uri?>(null) }
     val imagePicker = rememberLauncherForActivityResult(
@@ -151,23 +169,31 @@ fun ProfileScreen() {
             )
         })
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextFieldWithError(name, "Enter name", "Name can't be empty",
+        nameErr.value = outlinedTextFieldWithError(
+            name, "Enter name", "Name can't be empty",
             KeyboardType.Text
         ) { input -> input.value.isEmpty() }
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextFieldWithError(email, "Enter email", "Email must be in proper format",
+        emailErr.value = outlinedTextFieldWithError(
+            email, "Enter email", "Email must be in proper format",
             KeyboardType.Email
         ) { input ->
-            val emailRegex = Regex("^[A-Za-z](.*)([@]{1})(.{1,})(\\.)(.{1,})")
+            val emailRegex = Regex("^[A-Za-z](.*)([@]{1})(.{1,})(\\.)(.{2,})")
             !input.value.matches(emailRegex)
         }
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextFieldWithError(numberOfColors, "Enter number of colors",
+        numberOfColorsErr.value = outlinedTextFieldWithError(
+            numberOfColors, "Enter number of colors",
             "Number of colors must be between 5 and 10", KeyboardType.Number
-        ) { input -> (input.value.toFloatOrNull() ?: 0f) !in 5f..10f }
+        ) { input -> (input.value.toIntOrNull() ?: 0) !in 5..10 }
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { /*TODO*/ },
-            modifier =  Modifier
+        Button(
+            onClick = {
+                if (!(nameErr.value || emailErr.value || numberOfColorsErr.value)) {
+                    onStartGameClicked(numberOfColors.value.toInt())
+                }
+            },
+            modifier = Modifier
                 .fillMaxWidth()
         ) {
             Text("Next")
@@ -177,8 +203,8 @@ fun ProfileScreen() {
 
 @Preview
 @Composable
-fun ProfileScreenPreview() {
+fun LoginScreenPreview() {
     KotlinLabTheme {
-        ProfileScreen()
+        LoginScreen(onStartGameClicked = {}, clearForm = false)
     }
 }

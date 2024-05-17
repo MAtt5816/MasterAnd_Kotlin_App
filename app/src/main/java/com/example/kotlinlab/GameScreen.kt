@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -173,8 +174,8 @@ private fun selectNextAvailableColor(
     return selectedColors
 }
 
-private fun selectRandomColors(availableColors: List<Color>): MutableList<Color> {
-    return availableColors.shuffled().take(4).toMutableList()
+private fun selectRandomColors(availableColors: MutableList<Color>, colorsNumber: Int): MutableList<Color> {
+    return availableColors.shuffled().take(colorsNumber).toMutableList()
 }
 
 private fun checkColors(
@@ -211,8 +212,8 @@ data class GameRound(
 )
 
 @Composable
-fun GameScreen() {
-    val availableColors: List<Color> = listOf(
+fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int)->Unit, onLogoutClicked: ()->Unit) {
+    val defColorsSet: List<Color> = listOf(
         Color.Red,
         Color.Blue,
         Color.Green,
@@ -224,8 +225,10 @@ fun GameScreen() {
         Color.LightGray,
         Color.Gray
     )
+
+    val availableColors = remember { mutableStateOf(defColorsSet.take(colorsNumber).toMutableList()) }
     val notFoundColor: Color = MaterialTheme.colorScheme.background
-    val correctColors = remember { mutableStateOf(selectRandomColors(availableColors)) }
+    val correctColors = remember { mutableStateOf(selectRandomColors(availableColors.value, 4)) }
 
     val gameRounds = remember {
         mutableStateListOf(GameRound(notFoundColor))
@@ -236,65 +239,72 @@ fun GameScreen() {
     }
     val score = rememberSaveable { mutableStateOf("0") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Your score: ${score.value}",
-            style = MaterialTheme.typography.displayLarge,
-            modifier = Modifier.padding(bottom = 48.dp)
-        )
-
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+    Box {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(gameRounds.toList().size) { rowNumber ->
-                GameRow(
-                    selectedColors = gameRounds[rowNumber].selectedColors,
-                    feedbackColors = gameRounds[rowNumber].feedbackColors,
-                    clickable = !gameRounds[rowNumber].selectedColors.contains(null) && !gameRounds[rowNumber].isRowDone,
-                    onSelectColorClick = { buttonNumber ->
-                        gameRounds[rowNumber].selectedColors = selectNextAvailableColor(
-                            availableColors,
-                            gameRounds[rowNumber].selectedColors,
-                            buttonNumber
-                        )
-                    },
-                    onCheckClick = {
-                        gameRounds[rowNumber].feedbackColors =
-                            checkColors(
+            Text(
+                text = "Your score: ${score.value}",
+                style = MaterialTheme.typography.displayLarge,
+                modifier = Modifier.padding(bottom = 48.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                items(gameRounds.toList().size) { rowNumber ->
+                    GameRow(
+                        selectedColors = gameRounds[rowNumber].selectedColors,
+                        feedbackColors = gameRounds[rowNumber].feedbackColors,
+                        clickable = !gameRounds[rowNumber].selectedColors.contains(null) && !gameRounds[rowNumber].isRowDone,
+                        onSelectColorClick = { buttonNumber ->
+                            gameRounds[rowNumber].selectedColors = selectNextAvailableColor(
+                                availableColors.value,
                                 gameRounds[rowNumber].selectedColors,
-                                correctColors.value,
-                                notFoundColor,
-                                gameRounds[rowNumber].feedbackColors
+                                buttonNumber
                             )
-                        var scoreInt = score.value.toInt()
-                        score.value = (++scoreInt).toString()
-                        gameRounds[rowNumber].isRowDone = true
-                        if(gameRounds[rowNumber].feedbackColors.count { it == Color.Red } != 4)
-                            gameRounds.add(GameRound(notFoundColor))
-                        else
-                            isGameFinished.value = true
-                    }
-                )
+                        },
+                        onCheckClick = {
+                            gameRounds[rowNumber].feedbackColors =
+                                checkColors(
+                                    gameRounds[rowNumber].selectedColors,
+                                    correctColors.value,
+                                    notFoundColor,
+                                    gameRounds[rowNumber].feedbackColors
+                                )
+                            var scoreInt = score.value.toInt()
+                            score.value = (++scoreInt).toString()
+                            gameRounds[rowNumber].isRowDone = true
+                            if (gameRounds[rowNumber].feedbackColors.count { it == Color.Red } != 4)
+                                gameRounds.add(GameRound(notFoundColor))
+                            else
+                                isGameFinished.value = true
+                        }
+                    )
+                }
+            }
+
+            if (isGameFinished.value) {
+                Button(onClick = {
+                    onShowScoresClicked(score.value.toInt())
+                }) {
+                    Text("High score table")
+                }
             }
         }
+        Button(
+            onClick = {
+                onLogoutClicked()
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
 
-        if(isGameFinished.value) {
-            Button(onClick = {
-                gameRounds.clear()
-                gameRounds.add(GameRound(notFoundColor))
-                correctColors.value = selectRandomColors(availableColors)
-                score.value = 0.toString()
-                isGameFinished.value = false
-            }) {
-                Text("Start over")
-            }
+        ) {
+            Text("Logout")
         }
     }
 }
@@ -303,6 +313,6 @@ fun GameScreen() {
 @Composable
 fun GameScreenPreview() {
     KotlinLabTheme {
-        GameScreen()
+        GameScreen(5, onShowScoresClicked = {}, onLogoutClicked = {})
     }
 }
