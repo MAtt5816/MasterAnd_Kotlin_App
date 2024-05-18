@@ -38,8 +38,8 @@ fun NavigationGraph(navController: NavHostController) {
         composable("login") { backStackEntry ->
             val clearForm = backStackEntry.savedStateHandle.get<Boolean>("clearForm") ?: false
             LoginScreen(
-                onStartGameClicked = { colorsNumber ->
-                    navController.navigate("game/$colorsNumber")
+                onStartGameClicked = { colorsNumber, playerId ->
+                    navController.navigate("game/$colorsNumber/$playerId")
                 },
                 clearForm = clearForm
             )
@@ -47,33 +47,42 @@ fun NavigationGraph(navController: NavHostController) {
             backStackEntry.savedStateHandle["clearForm"] = false
         }
         composable(
-            "game/{colorsNumber}",
-            arguments = listOf(navArgument("colorsNumber") { type = NavType.IntType })
+            "game/{colorsNumber}/{playerId}",
+            arguments = listOf(
+                navArgument("colorsNumber") { type = NavType.IntType },
+                navArgument("playerId") { type = NavType.LongType }
+            )
         ) { backStackEntry ->
             val colorsNumber = backStackEntry.arguments?.getInt("colorsNumber") ?: 0
+            val playerId = backStackEntry.arguments?.getLong("playerId") ?: 0
             GameScreen(
                 colorsNumber = colorsNumber,
                 onShowScoresClicked = { points ->
-                    navController.navigate("scores/$points/$colorsNumber")
+                    navController.navigate("scores/$points/$colorsNumber/$playerId")
                 },
                 onLogoutClicked = {
                     navController.getBackStackEntry("login").savedStateHandle["clearForm"] = true
                     navController.popBackStack("login", false)
-                }
+                },
+                playerId = playerId
             )
         }
         composable(
-            "scores/{points}/{colorsNumber}",
+            "scores/{points}/{colorsNumber}/{playerId}",
             arguments = listOf(
                 navArgument("points") { type = NavType.IntType },
-                navArgument("colorsNumber") { type = NavType.IntType }
+                navArgument("colorsNumber") { type = NavType.IntType },
+                navArgument("playerId") { type = NavType.LongType }
             )
         ) { backStackEntry ->
             val points = backStackEntry.arguments?.getInt("points") ?: 0
             ScoresScreen(
                 score = points,
                 onRestartGameClicked = {
-                    navController.navigate("game/${backStackEntry.arguments?.getInt("colorsNumber")}")
+                    navController.navigate(
+                        "game/${backStackEntry.arguments?.getInt("colorsNumber")}" +
+                                "/${backStackEntry.arguments?.getLong("playerId")}"
+                    )
                 },
                 onLogoutClicked = {
                     navController.getBackStackEntry("login").savedStateHandle["clearForm"] = true

@@ -29,10 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,9 +46,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.kotlinlab.AppViewModelProvider
 import com.example.kotlinlab.R
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
+import com.example.kotlinlab.viewmodels.LoginViewModel
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -135,7 +141,13 @@ private fun ProfileImageWithPicker(
 }
 
 @Composable
-fun LoginScreen(onStartGameClicked: (Int) -> Unit, clearForm: Boolean) {
+fun LoginScreen(
+    onStartGameClicked: (Int, Long) -> Unit,
+    clearForm: Boolean,
+    viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
+) {
+    val coroutineScope = rememberCoroutineScope()
+
     val name = rememberSaveable { mutableStateOf("") }
     val email = rememberSaveable { mutableStateOf("") }
     val numberOfColors = rememberSaveable { mutableStateOf("") }
@@ -166,6 +178,11 @@ fun LoginScreen(onStartGameClicked: (Int) -> Unit, clearForm: Boolean) {
         animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse)
     )
 
+    LaunchedEffect(name.value, email.value) {
+        viewModel.name.value = name.value
+        viewModel.email.value = email.value
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -177,7 +194,8 @@ fun LoginScreen(onStartGameClicked: (Int) -> Unit, clearForm: Boolean) {
         Text(
             text = "MasterAnd",
             style = MaterialTheme.typography.displayLarge,
-            modifier = Modifier.padding(bottom = 48.dp)
+            modifier = Modifier
+                .padding(bottom = 48.dp)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -211,7 +229,10 @@ fun LoginScreen(onStartGameClicked: (Int) -> Unit, clearForm: Boolean) {
         Button(
             onClick = {
                 if (!(nameErr.value || emailErr.value || numberOfColorsErr.value)) {
-                    onStartGameClicked(numberOfColors.value.toInt())
+                    coroutineScope.launch {
+                        viewModel.savePlayer()
+                        onStartGameClicked(numberOfColors.value.toInt(), viewModel.playerId.value)
+                    }
                 }
             },
             modifier = Modifier
@@ -222,10 +243,14 @@ fun LoginScreen(onStartGameClicked: (Int) -> Unit, clearForm: Boolean) {
     }
 }
 
+fun onStartGameClickedPreview(): (Int, Long) -> Unit {
+    return { i: Int, l: Long -> {}}
+}
+
 @Preview
 @Composable
 fun LoginScreenPreview() {
     KotlinLabTheme {
-        LoginScreen(onStartGameClicked = {}, clearForm = false)
+        LoginScreen(onStartGameClicked = onStartGameClickedPreview(), clearForm = false)
     }
 }

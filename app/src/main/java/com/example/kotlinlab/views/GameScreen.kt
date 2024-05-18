@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -46,9 +48,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kotlinlab.AppViewModelProvider
 import com.example.kotlinlab.R
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
+import com.example.kotlinlab.viewmodels.GameViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 private fun CircularButton(
@@ -128,7 +134,7 @@ private fun FeedbackCircles(
 
     LaunchedEffect(colors) {
         while (true) {
-            for (i in 0..3){
+            for (i in 0..3) {
                 colorAnimations[i].animateTo(
                     targetValue = colors[i],
                     animationSpec = tween(durationMillis = 500, easing = LinearEasing)
@@ -269,7 +275,15 @@ data class GameRound(
 )
 
 @Composable
-fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int) -> Unit, onLogoutClicked: () -> Unit) {
+fun GameScreen(
+    colorsNumber: Int,
+    onShowScoresClicked: (Int) -> Unit,
+    onLogoutClicked: () -> Unit,
+    viewModel: GameViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    playerId: Long
+){
+    val coroutineScope = rememberCoroutineScope()
+
     val defColorsSet: List<Color> = listOf(
         Color.Red,
         Color.Blue,
@@ -295,9 +309,14 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int) -> Unit, onLogoutCl
     val isGameFinished = remember {
         mutableStateOf(false)
     }
-    val score = rememberSaveable { mutableStateOf("0") }
+    val score = remember { mutableStateOf("0") }
 
     val rowsVisible = remember { mutableStateListOf(false) }
+
+    LaunchedEffect(score.value) {
+        viewModel.points.value = score.value.toInt()
+        viewModel.playerId.value = playerId
+    }
 
     Box {
         Column(
@@ -314,7 +333,9 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int) -> Unit, onLogoutCl
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.85f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(gameRounds.toList().size) { rowNumber ->
@@ -366,7 +387,10 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int) -> Unit, onLogoutCl
 
             if (isGameFinished.value) {
                 Button(onClick = {
-                    onShowScoresClicked(score.value.toInt())
+                    coroutineScope.launch {
+                        viewModel.saveScore()
+                        onShowScoresClicked(score.value.toInt())
+                    }
                 }) {
                     Text("High score table")
                 }
@@ -388,6 +412,6 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int) -> Unit, onLogoutCl
 @Composable
 fun GameScreenPreview() {
     KotlinLabTheme {
-        GameScreen(5, onShowScoresClicked = {}, onLogoutClicked = {})
+        GameScreen(5, onShowScoresClicked = {}, onLogoutClicked = {}, playerId = 0)
     }
 }
