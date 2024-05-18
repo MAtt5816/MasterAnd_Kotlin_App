@@ -1,5 +1,11 @@
 package com.example.kotlinlab
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -9,7 +15,23 @@ import androidx.navigation.navArgument
 
 @Composable
 fun NavigationGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = "login") {
+    NavHost(
+        navController = navController, startDestination = "login",
+        enterTransition = {
+            fadeIn()
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(easing = EaseIn)
+            )
+        },
+        exitTransition = {
+            fadeOut()
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(easing = EaseOut)
+            )
+        }
+    ) {
         composable("login") { backStackEntry ->
             val clearForm = backStackEntry.savedStateHandle.get<Boolean>("clearForm") ?: false
             LoginScreen(

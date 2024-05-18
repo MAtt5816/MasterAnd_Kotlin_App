@@ -1,5 +1,16 @@
 package com.example.kotlinlab
 
+import android.util.Log
+import androidx.compose.animation.Animatable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,11 +33,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,20 +47,34 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 private fun CircularButton(
     onClick: () -> Unit,
     color: Color
 ) {
+    val previousColor = remember { mutableStateOf(Color.Transparent) }
+
+    var animateColor by remember { mutableStateOf(false) }
+    val animatedColor by animateColorAsState(
+        if (animateColor) color else previousColor.value,
+        animationSpec = repeatable(iterations = 10, tween(100), repeatMode = RepeatMode.Reverse)
+    )
+
+    LaunchedEffect(color) {
+        animateColor = true
+    }
+
     Button(
         onClick = onClick,
         border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
-        colors =
-        ButtonDefaults.buttonColors(
-            containerColor = color,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = animatedColor,
             contentColor = MaterialTheme.colorScheme.onBackground
         ),
         modifier = Modifier
@@ -95,8 +122,24 @@ private fun SmallCircle(
 
 @Composable
 private fun FeedbackCircles(
-    colors: List<Color>
+    colors: List<Color>,
+    notFoundColor: Color
 ) {
+    val colorAnimations = remember {
+        MutableList(4) { Animatable(notFoundColor) }
+    }
+
+    LaunchedEffect(colors) {
+        while (true) {
+            for (i in 0..3){
+                colorAnimations[i].animateTo(
+                    targetValue = colors[i],
+                    animationSpec = tween(durationMillis = 500, easing = LinearEasing)
+                )
+            }
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(5.dp),
@@ -106,15 +149,15 @@ private fun FeedbackCircles(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            SmallCircle(color = colors[0])
-            SmallCircle(color = colors[1])
+            SmallCircle(color = colorAnimations[0].value)
+            SmallCircle(color = colorAnimations[1].value)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            SmallCircle(color = colors[2])
-            SmallCircle(color = colors[3])
+            SmallCircle(color = colorAnimations[2].value)
+            SmallCircle(color = colorAnimations[3].value)
         }
     }
 }
@@ -125,31 +168,46 @@ private fun GameRow(
     feedbackColors: MutableList<Color>,
     clickable: Boolean,
     onSelectColorClick: (Int) -> Unit,
-    onCheckClick: () -> Unit
+    onCheckClick: () -> Unit,
+    rowVisible: Boolean,
+    notFoundColor: Color
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-        SelectableColorsRow(
-            colors = selectedColors,
-            onClick = onSelectColorClick
-        )
-        IconButton(
-            onClick = onCheckClick,
-            enabled = clickable,
-            colors = IconButtonDefaults.filledIconButtonColors(),
-            modifier = Modifier
-                .clip(CircleShape)
-                .size(50.dp)
-                .background(color = MaterialTheme.colorScheme.background)
-        ) {
-            Image(
-                painter = painterResource(
-                    id = R.drawable.ic_baseline_check_24
-                ),
-                contentDescription = "Check",
-                contentScale = ContentScale.Crop
+    var animateDp by remember { mutableStateOf(false) }
+    val animatedDp by animateDpAsState(
+        if (animateDp) 50.dp else 0.dp,
+        animationSpec = repeatable(iterations = 1, tween(1000))
+    )
+
+    animateDp = clickable
+
+    AnimatedVisibility(
+        visible = rowVisible,
+        enter = expandVertically(expandFrom = Alignment.Top)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            SelectableColorsRow(
+                colors = selectedColors,
+                onClick = onSelectColorClick
             )
+            IconButton(
+                onClick = onCheckClick,
+                enabled = clickable,
+                colors = IconButtonDefaults.filledIconButtonColors(),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(animatedDp)
+                    .background(color = MaterialTheme.colorScheme.background)
+            ) {
+                Image(
+                    painter = painterResource(
+                        id = R.drawable.ic_baseline_check_24
+                    ),
+                    contentDescription = "Check",
+                    contentScale = ContentScale.Crop
+                )
+            }
+            FeedbackCircles(colors = feedbackColors, notFoundColor = notFoundColor)
         }
-        FeedbackCircles(colors = feedbackColors)
     }
 }
 
@@ -174,8 +232,10 @@ private fun selectNextAvailableColor(
     return selectedColors
 }
 
-private fun selectRandomColors(availableColors: MutableList<Color>, colorsNumber: Int): MutableList<Color> {
-    return availableColors.shuffled().take(colorsNumber).toMutableList()
+private fun selectRandomColors(
+    availableColors: MutableList<Color>
+): MutableList<Color> {
+    return availableColors.shuffled().take(4).toMutableList()
 }
 
 private fun checkColors(
@@ -212,7 +272,7 @@ data class GameRound(
 )
 
 @Composable
-fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int)->Unit, onLogoutClicked: ()->Unit) {
+fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int) -> Unit, onLogoutClicked: () -> Unit) {
     val defColorsSet: List<Color> = listOf(
         Color.Red,
         Color.Blue,
@@ -226,9 +286,10 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int)->Unit, onLogoutClic
         Color.Gray
     )
 
-    val availableColors = remember { mutableStateOf(defColorsSet.take(colorsNumber).toMutableList()) }
+    val availableColors =
+        remember { mutableStateOf(defColorsSet.take(colorsNumber).toMutableList()) }
     val notFoundColor: Color = MaterialTheme.colorScheme.background
-    val correctColors = remember { mutableStateOf(selectRandomColors(availableColors.value, 4)) }
+    val correctColors = remember { mutableStateOf(selectRandomColors(availableColors.value)) }
 
     val gameRounds = remember {
         mutableStateListOf(GameRound(notFoundColor))
@@ -238,6 +299,8 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int)->Unit, onLogoutClic
         mutableStateOf(false)
     }
     val score = rememberSaveable { mutableStateOf("0") }
+
+    val rowsVisible = remember { mutableStateListOf(false) }
 
     Box {
         Column(
@@ -258,16 +321,28 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int)->Unit, onLogoutClic
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(gameRounds.toList().size) { rowNumber ->
+                    LaunchedEffect(rowNumber) {
+                        rowsVisible[rowNumber] = true
+                        if (rowNumber == 0)
+                            delay(1000L)
+                    }
+
+                    val colorChangeable = !gameRounds[rowNumber].isRowDone
+                    val clickable =
+                        !gameRounds[rowNumber].selectedColors.contains(null) && !gameRounds[rowNumber].isRowDone
+
                     GameRow(
                         selectedColors = gameRounds[rowNumber].selectedColors,
                         feedbackColors = gameRounds[rowNumber].feedbackColors,
-                        clickable = !gameRounds[rowNumber].selectedColors.contains(null) && !gameRounds[rowNumber].isRowDone,
+                        clickable = clickable,
                         onSelectColorClick = { buttonNumber ->
-                            gameRounds[rowNumber].selectedColors = selectNextAvailableColor(
-                                availableColors.value,
-                                gameRounds[rowNumber].selectedColors,
-                                buttonNumber
-                            )
+                            if (colorChangeable) {
+                                gameRounds[rowNumber].selectedColors = selectNextAvailableColor(
+                                    availableColors.value,
+                                    gameRounds[rowNumber].selectedColors,
+                                    buttonNumber
+                                )
+                            }
                         },
                         onCheckClick = {
                             gameRounds[rowNumber].feedbackColors =
@@ -280,11 +355,14 @@ fun GameScreen(colorsNumber: Int, onShowScoresClicked: (Int)->Unit, onLogoutClic
                             var scoreInt = score.value.toInt()
                             score.value = (++scoreInt).toString()
                             gameRounds[rowNumber].isRowDone = true
-                            if (gameRounds[rowNumber].feedbackColors.count { it == Color.Red } != 4)
+                            if (gameRounds[rowNumber].feedbackColors.count { it == Color.Red } != 4) {
                                 gameRounds.add(GameRound(notFoundColor))
-                            else
+                                rowsVisible.add(false)
+                            } else
                                 isGameFinished.value = true
-                        }
+                        },
+                        rowVisible = rowsVisible[rowNumber],
+                        notFoundColor = notFoundColor
                     )
                 }
             }
