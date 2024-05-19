@@ -12,6 +12,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.kotlinlab.views.GameScreen
+import com.example.kotlinlab.views.LoginScreen
+import com.example.kotlinlab.views.ScoresScreen
 
 @Composable
 fun NavigationGraph(navController: NavHostController) {

@@ -1,4 +1,4 @@
-package com.example.kotlinlab
+package com.example.kotlinlab.views
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.kotlinlab.R
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
 
 

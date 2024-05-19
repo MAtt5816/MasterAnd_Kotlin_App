@@ -1,4 +1,4 @@
-package com.example.kotlinlab
+package com.example.kotlinlab.views
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
