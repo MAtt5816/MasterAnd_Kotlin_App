@@ -42,7 +42,7 @@ fun ScoresScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    var scores = remember {
+    val scores = remember {
         mutableStateListOf<Score>()
     }
 

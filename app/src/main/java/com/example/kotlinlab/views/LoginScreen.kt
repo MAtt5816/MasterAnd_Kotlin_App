@@ -142,7 +142,7 @@ private fun ProfileImageWithPicker(
 
 @Composable
 fun LoginScreen(
-    onStartGameClicked: (Int, Long) -> Unit,
+    onGoToProfileClicked: (Int, Long) -> Unit,
     clearForm: Boolean,
     viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -151,12 +151,6 @@ fun LoginScreen(
     val name = rememberSaveable { mutableStateOf("") }
     val email = rememberSaveable { mutableStateOf("") }
     val numberOfColors = rememberSaveable { mutableStateOf("") }
-
-    if (clearForm) {
-        name.value = ""
-        email.value = ""
-        numberOfColors.value = ""
-    }
 
     val nameErr = remember { mutableStateOf(false) }
     val emailErr = remember { mutableStateOf(false) }
@@ -171,6 +165,13 @@ fun LoginScreen(
             }
         })
 
+    if (clearForm) {
+        name.value = ""
+        email.value = ""
+        numberOfColors.value = ""
+        profileImageUri.value = null
+    }
+
     val infiniteTransition = rememberInfiniteTransition()
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.5f,
@@ -178,9 +179,10 @@ fun LoginScreen(
         animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse)
     )
 
-    LaunchedEffect(name.value, email.value) {
+    LaunchedEffect(name.value, email.value, profileImageUri.value) {
         viewModel.name.value = name.value
         viewModel.email.value = email.value
+        viewModel.profileImageUri.value = profileImageUri.value
     }
 
     Column(
@@ -231,7 +233,7 @@ fun LoginScreen(
                 if (!(nameErr.value || emailErr.value || numberOfColorsErr.value)) {
                     coroutineScope.launch {
                         viewModel.savePlayer()
-                        onStartGameClicked(numberOfColors.value.toInt(), viewModel.playerId.value)
+                        onGoToProfileClicked(numberOfColors.value.toInt(), viewModel.playerId.value)
                     }
                 }
             },
@@ -251,6 +253,6 @@ fun onStartGameClickedPreview(): (Int, Long) -> Unit {
 @Composable
 fun LoginScreenPreview() {
     KotlinLabTheme {
-        LoginScreen(onStartGameClicked = onStartGameClickedPreview(), clearForm = false)
+        LoginScreen(onGoToProfileClicked = onStartGameClickedPreview(), clearForm = false)
     }
 }

@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.kotlinlab.views.GameScreen
 import com.example.kotlinlab.views.LoginScreen
+import com.example.kotlinlab.views.ProfileCard
 import com.example.kotlinlab.views.ScoresScreen
 
 @Composable
@@ -38,13 +39,29 @@ fun NavigationGraph(navController: NavHostController) {
         composable("login") { backStackEntry ->
             val clearForm = backStackEntry.savedStateHandle.get<Boolean>("clearForm") ?: false
             LoginScreen(
-                onStartGameClicked = { colorsNumber, playerId ->
-                    navController.navigate("game/$colorsNumber/$playerId")
+                onGoToProfileClicked = { colorsNumber, playerId ->
+                    navController.navigate("profile/$colorsNumber/$playerId")
                 },
                 clearForm = clearForm
             )
 
             backStackEntry.savedStateHandle["clearForm"] = false
+        }
+        composable(
+            "profile/{colorsNumber}/{playerId}",
+            arguments = listOf(
+                navArgument("colorsNumber") { type = NavType.IntType },
+                navArgument("playerId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val colorsNumber = backStackEntry.arguments?.getInt("colorsNumber") ?: 0
+            val playerId = backStackEntry.arguments?.getLong("playerId") ?: 0
+            ProfileCard(
+                playerId = playerId,
+                onStartGameClicked = {
+                    navController.navigate("game/$colorsNumber/$playerId")
+                }
+            )
         }
         composable(
             "game/{colorsNumber}/{playerId}",
