@@ -46,9 +46,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.kotlinlab.AppViewModelProvider
+//import com.example.kotlinlab.AppViewModelProvider
 import com.example.kotlinlab.R
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
 import com.example.kotlinlab.viewmodels.LoginViewModel
@@ -144,7 +145,7 @@ private fun ProfileImageWithPicker(
 fun LoginScreen(
     onGoToProfileClicked: (Int, Long) -> Unit,
     clearForm: Boolean,
-    viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: LoginViewModel = hiltViewModel<LoginViewModel>()
 ) {
     val coroutineScope = rememberCoroutineScope()
 

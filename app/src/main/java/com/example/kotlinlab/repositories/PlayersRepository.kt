@@ -2,7 +2,12 @@ package com.example.kotlinlab.repositories
 
 import com.example.kotlinlab.dao.PlayerDao
 import com.example.kotlinlab.data.Player
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
 interface PlayersRepository {
     fun getAllPlayersStream(): Flow<List<Player>>
@@ -12,7 +17,14 @@ interface PlayersRepository {
     suspend fun updatePlayer(player: Player)
 }
 
-class PlayersRepositoryImpl(private val playerDao: PlayerDao) : PlayersRepository {
+@Module
+@InstallIn(ViewModelComponent::class)
+abstract class PlayersModule {
+    @Binds
+    abstract fun bindScoresRepository(playersRepositoryImpl: PlayersRepositoryImpl): PlayersRepository
+}
+
+class PlayersRepositoryImpl @Inject constructor(private val playerDao: PlayerDao) : PlayersRepository {
     override fun getAllPlayersStream(): Flow<List<Player>> =
         playerDao.getAllPlayersStream()
 

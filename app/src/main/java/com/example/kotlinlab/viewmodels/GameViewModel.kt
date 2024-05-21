@@ -4,8 +4,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.kotlinlab.data.Score
 import com.example.kotlinlab.repositories.ScoresRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class GameViewModel(
+@HiltViewModel
+class GameViewModel @Inject constructor(
     private val scoresRepository: ScoresRepository
 ) : ViewModel() {
     val playerId = mutableStateOf(0L)

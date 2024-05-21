@@ -5,8 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.kotlinlab.data.Player
 import com.example.kotlinlab.repositories.PlayersRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class LoginViewModel(private val playersRepository: PlayersRepository) : ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor(private val playersRepository: PlayersRepository) : ViewModel() {
     var playerId = mutableStateOf(0L)
     val name = mutableStateOf("")
     val email = mutableStateOf("")

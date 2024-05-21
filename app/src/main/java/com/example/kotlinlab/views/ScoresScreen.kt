@@ -23,8 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kotlinlab.AppViewModelProvider
+//import com.example.kotlinlab.AppViewModelProvider
 import com.example.kotlinlab.viewmodels.ScoresViewModel
 import kotlinx.coroutines.launch
 
@@ -38,7 +39,7 @@ fun ScoresScreen(
     score: Int,
     onRestartGameClicked: () -> Unit,
     onLogoutClicked: () -> Unit,
-    viewModel: ScoresViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: ScoresViewModel = hiltViewModel<ScoresViewModel>()
 ) {
     val coroutineScope = rememberCoroutineScope()
 

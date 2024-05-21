@@ -7,9 +7,12 @@ import com.example.kotlinlab.data.PlayerWithScore
 import com.example.kotlinlab.repositories.PlayerScoresRepository
 import com.example.kotlinlab.repositories.PlayersRepository
 import com.example.kotlinlab.repositories.ScoresRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
-class ScoresViewModel(
+@HiltViewModel
+class ScoresViewModel @Inject constructor(
     private val playerWithScoresRepository: PlayerScoresRepository,
     private val playersRepository: PlayersRepository,
     private val scoresRepository: ScoresRepository

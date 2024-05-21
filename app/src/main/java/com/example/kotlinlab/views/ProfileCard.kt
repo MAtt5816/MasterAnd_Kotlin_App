@@ -30,9 +30,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.kotlinlab.AppViewModelProvider
+//import com.example.kotlinlab.AppViewModelProvider
 import com.example.kotlinlab.R
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
 import com.example.kotlinlab.viewmodels.ProfileViewModel
@@ -122,7 +123,7 @@ fun DescriptionField(
 fun ProfileCard(
     playerId: Long,
     onStartGameClicked: () -> Unit,
-    viewModel: ProfileViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: ProfileViewModel = hiltViewModel<ProfileViewModel>()
 ) {
     val coroutineScope = rememberCoroutineScope()
 

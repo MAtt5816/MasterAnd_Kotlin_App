@@ -9,28 +9,28 @@ import com.example.kotlinlab.viewmodels.LoginViewModel
 import com.example.kotlinlab.viewmodels.ProfileViewModel
 import com.example.kotlinlab.viewmodels.ScoresViewModel
 
-object AppViewModelProvider {
-    val Factory = viewModelFactory {
-        initializer {
-            LoginViewModel(masterAndApplication().container.playersRepository)
-        }
-        initializer {
-            ProfileViewModel(masterAndApplication().container.playersRepository)
-        }
-        initializer {
-            GameViewModel(
-                masterAndApplication().container.scoresRepository
-            )
-        }
-        initializer {
-            ScoresViewModel(
-                masterAndApplication().container.playerScoresRepository,
-                masterAndApplication().container.playersRepository,
-                masterAndApplication().container.scoresRepository
-            )
-        }
-    }
-}
-
-fun CreationExtras.masterAndApplication(): MasterAndApplication =
-    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MasterAndApplication)
+//object AppViewModelProvider {
+//    val Factory = viewModelFactory {
+//        initializer {
+//            LoginViewModel(masterAndApplication().container.playersRepository)
+//        }
+//        initializer {
+//            ProfileViewModel(masterAndApplication().container.playersRepository)
+//        }
+//        initializer {
+//            GameViewModel(
+//                masterAndApplication().container.scoresRepository
+//            )
+//        }
+//        initializer {
+//            ScoresViewModel(
+//                masterAndApplication().container.playerScoresRepository,
+//                masterAndApplication().container.playersRepository,
+//                masterAndApplication().container.scoresRepository
+//            )
+//        }
+//    }
+//}
+//
+//fun CreationExtras.masterAndApplication(): MasterAndApplication =
+//    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MasterAndApplication)

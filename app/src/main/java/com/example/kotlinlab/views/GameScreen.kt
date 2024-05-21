@@ -48,8 +48,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kotlinlab.AppViewModelProvider
+//import com.example.kotlinlab.AppViewModelProvider
 import com.example.kotlinlab.R
 import com.example.kotlinlab.ui.theme.KotlinLabTheme
 import com.example.kotlinlab.viewmodels.GameViewModel
@@ -279,7 +280,7 @@ fun GameScreen(
     colorsNumber: Int,
     onShowScoresClicked: (Int) -> Unit,
     onLogoutClicked: () -> Unit,
-    viewModel: GameViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    viewModel: GameViewModel = hiltViewModel<GameViewModel>(),
     playerId: Long
 ){
     val coroutineScope = rememberCoroutineScope()
